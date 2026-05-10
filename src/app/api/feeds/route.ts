@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
             $or: [
               { name: { $regex: search, $options: "i" } },
               { description: { $regex: search, $options: "i" } },
-              { serviceType: { $regex: search, $options: "i" } },
+              { category: { $regex: search, $options: "i" } },
             ],
           })
             .sort(sortConfig)
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         : categories.length > 0
           ? ConstructionService.find({
               ...baseFilter,
-              serviceType: { $in: categories },
+              category: { $in: categories },
             })
               .sort(sortConfig)
               .lean()
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       ...constructionServices.map((cs: any) => ({
         ...cs,
         _model: "ConstructionService",
-        category: cs.serviceType?.toLowerCase() || "construction-service",
+        category: cs.category?.toLowerCase() || "construction-service",
       })),
     ]
 
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
           item.name?.toLowerCase().includes(searchLower) ||
           item.description?.toLowerCase().includes(searchLower) ||
           item.jobTitle?.toLowerCase().includes(searchLower) ||
-          item.serviceType?.toLowerCase().includes(searchLower)
+          item.category?.toLowerCase().includes(searchLower)
       )
     }
 
