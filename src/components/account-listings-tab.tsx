@@ -24,18 +24,31 @@ interface Product extends Omit<IProduct, "_id" | "userId"> {
     userId: string
 }
 
+interface ISubcategory {
+    label: string
+    slug: string
+}
+
+interface ICategory {
+    _id: string
+    mainCategory: string
+    subcategories: ISubcategory[]
+}
+
 export default function AccountListingsTab() {
     const { data: session } = useSession()
     const [products, setProducts] = useState<Product[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isCreating, setIsCreating] = useState(false)
     const [openDialog, setOpenDialog] = useState(false)
+    const [categories, setCategories] = useState<ICategory[]>([])
+    const [selectedMainCategory, setSelectedMainCategory] = useState<string>("")
+    const [selectedSubcategory, setSelectedSubcategory] = useState<string>("")
     const [selectedCategoryType, setSelectedCategoryType] = useState<"vehicle" | "property" | "job" | "construction" | "product">("product")
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
     const [uploadingImages, setUploadingImages] = useState(false)
-
 
     const canManageAllProducts = session?.user?.roles?.includes(Role.STAFF) || session?.user?.roles?.includes(Role.ADMIN)
     const [formData, setFormData] = useState({
@@ -46,47 +59,39 @@ export default function AccountListingsTab() {
         images: [] as string[],
     })
 
-    const categories = [
-        "Cars",
-        "Motorbikes & Scooters",
-        "Trucks, Vans & Buses",
-        "Auto Parts & Accessories",
-        "Bicycles & 3 Wheelers",
-        "Apartments & Flats",
-        "Houses",
-        "Commercial Property",
-        "Plots & Land",
-        "Local Jobs",
-        "Plumber",
-        "Building Construction",
-        "Electrician",
-        "Masonry",
-        "Carpentry",
-    ]
-
-    // Fetch user's products
+    // Fetch categories and user's products
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchData = async () => {
             if (!session?.user) return
 
             try {
-                const response = await fetch(canManageAllProducts ? `/api/products` : `/api/products?userId=${session.user.id}`)
-                const data = await response.json()
+                // Fetch categories
+                const categoriesResponse = await fetch("/api/categories")
+                const categoriesData = await categoriesResponse.json()
+                if (categoriesData.categories) {
+                    setCategories(categoriesData.categories)
+                }
 
-                if (data.success) {
-                    setProducts(data.products)
+                // Fetch products
+                const productsResponse = await fetch(
+                    canManageAllProducts ? `/api/products` : `/api/products?userId=${session.user.id}`
+                )
+                const productsData = await productsResponse.json()
+
+                if (productsData.success) {
+                    setProducts(productsData.products)
                 } else {
                     setError("Failed to load your products")
                 }
             } catch (err) {
-                console.error("Error fetching products:", err)
+                console.error("Error fetching data:", err)
                 setError("Failed to load your products")
             } finally {
                 setIsLoading(false)
             }
         }
 
-        fetchProducts()
+        fetchData()
     }, [session?.user, canManageAllProducts])
 
     const handleOpenDialog = (product?: Product) => {
@@ -527,22 +532,54 @@ export default function AccountListingsTab() {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-3 py-6">
+                    <div className="space-y-4 py-6">
+                        {/* Main Category Selection */}
                         <div>
-                            <Label htmlFor="category-type">Listing Type *</Label>
-                            <Select value={selectedCategoryType} onValueChange={(value: any) => setSelectedCategoryType(value)}>
+                            <Label htmlFor="main-category">Category *</Label>
+                            <Select value={selectedMainCategory} onValueChange={(value) => {
+                                setSelectedMainCategory(value)
+                                setSelectedSubcategory("")
+                                // Auto-select category type based on main category
+                                if (value === "vehicles") setSelectedCategoryType("vehicle")
+                                else if (value === "properties") setSelectedCategoryType("property")
+                                else if (value === "careers") setSelectedCategoryType("job")
+                                else if (value === "construction-freelancers") setSelectedCategoryType("construction")
+                                else setSelectedCategoryType("product")
+                            }}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select listing type" />
+                                    <SelectValue placeholder="Select a category" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="product">General Product</SelectItem>
-                                    <SelectItem value="vehicle">Vehicle</SelectItem>
-                                    <SelectItem value="property">Property</SelectItem>
-                                    <SelectItem value="job">Job Posting</SelectItem>
-                                    <SelectItem value="construction">Construction Service</SelectItem>
+                                    {categories.map((cat) => (
+                                        <SelectItem key={cat._id} value={cat.mainCategory}>
+                                            {cat.mainCategory.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                                        </SelectItem>
+                                    ))}
+                                    <SelectItem value="general">General Product</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Subcategory Selection */}
+                        {selectedMainCategory && selectedMainCategory !== "general" && (
+                            <div>
+                                <Label htmlFor="subcategory">Subcategory *</Label>
+                                <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a subcategory" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories
+                                            .find((cat) => cat.mainCategory === selectedMainCategory)
+                                            ?.subcategories.map((subcat) => (
+                                                <SelectItem key={subcat.slug} value={subcat.slug}>
+                                                    {subcat.label}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                     </div>
 
                     <DialogFooter>
@@ -556,6 +593,7 @@ export default function AccountListingsTab() {
                             onClick={() => {
                                 setOpenDialog(true)
                             }}
+                            disabled={!selectedMainCategory || (selectedMainCategory !== "general" && !selectedSubcategory)}
                         >
                             Continue
                         </Button>
