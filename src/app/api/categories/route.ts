@@ -1,7 +1,8 @@
 // app/api/categories/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { Category, MainCategory } from "@/models/Category";
+import { Category } from "@/models/Category";
+import { MainCategory } from "@/lib/categories"
 import { User } from "@/models/User";
 import { Role } from "@/lib/roles"
 import { connectToDatabase } from "@/lib/db";
