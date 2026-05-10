@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { Upload, X, Loader2 } from "lucide-react"
+import { useState, useCallback, useRef } from "react"
+import { Upload, X, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 
@@ -11,6 +11,9 @@ interface CloudinaryImageUploaderProps {
   disabled?: boolean
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+
 export function CloudinaryImageUploader({
   onImagesChange,
   maxImages = 3,
@@ -19,58 +22,117 @@ export function CloudinaryImageUploader({
   const [images, setImages] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const validateFile = (file: File): string | null => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return `Invalid file type: ${file.name}. Only PNG, JPG, GIF, and WebP are allowed.`
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return `File too large: ${file.name}. Maximum size is 5MB.`
+    }
+    return null
+  }
 
   const handleFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.currentTarget.files
-      if (!files) return
-
-      setUploadError(null)
-
-      // Check total count
-      const remainingSlots = maxImages - images.length
-      if (files.length > remainingSlots) {
-        setUploadError(`You can only upload ${remainingSlots} more image(s)`)
+      const files = e.currentTarget?.files
+      if (!files || files.length === 0) {
+        console.log("[v0] No files selected")
         return
       }
 
+      console.log("[v0] Files selected:", files.length)
+      setUploadError(null)
+
+      // Validate file count
+      const remainingSlots = maxImages - images.length
+      if (files.length > remainingSlots) {
+        const errorMsg = `You can only upload ${remainingSlots} more image(s)`
+        console.warn("[v0] File count error:", errorMsg)
+        setUploadError(errorMsg)
+        return
+      }
+
+      // Validate each file
+      const fileArray = Array.from(files)
+      for (const file of fileArray) {
+        const validationError = validateFile(file)
+        if (validationError) {
+          console.warn("[v0] Validation error:", validationError)
+          setUploadError(validationError)
+          // Reset input after error
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ""
+          }
+          return
+        }
+      }
+
       setUploading(true)
+      console.log("[v0] Starting upload for", fileArray.length, "file(s)")
 
       try {
-        const uploadPromises = Array.from(files).map(async (file) => {
+        const uploadPromises = fileArray.map(async (file) => {
+          console.log("[v0] Uploading file:", file.name)
+          
           const formData = new FormData()
           formData.append("file", file)
 
-          const response = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-          })
+          try {
+            const response = await fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            })
 
-          if (!response.ok) {
-            throw new Error("Upload failed")
+            console.log("[v0] Upload response status:", response.status)
+
+            if (!response.ok) {
+              const errorText = await response.text()
+              console.error("[v0] Upload HTTP error:", response.status, errorText)
+              throw new Error(`Upload failed with status ${response.status}`)
+            }
+
+            const data = await response.json()
+            console.log("[v0] Upload response data:", { success: data.success, hasUrl: !!data.url })
+
+            if (!data.success) {
+              console.error("[v0] Upload not successful:", data.error)
+              throw new Error(data.error || "Upload failed")
+            }
+
+            if (!data.url) {
+              console.error("[v0] No URL in response")
+              throw new Error("No URL returned from upload")
+            }
+
+            return data.url
+          } catch (error) {
+            console.error("[v0] File upload error:", file.name, error)
+            throw error
           }
-
-          const data = await response.json()
-          if (!data.success) {
-            throw new Error(data.error || "Upload failed")
-          }
-
-          return data.url
         })
 
         const uploadedUrls = await Promise.all(uploadPromises)
+        console.log("[v0] All files uploaded successfully:", uploadedUrls.length)
+
         const newImages = [...images, ...uploadedUrls]
         setImages(newImages)
         onImagesChange(newImages)
+        
+        console.log("[v0] Images state updated. Total images:", newImages.length)
       } catch (error) {
-        console.error("[v0] Upload error:", error)
-        setUploadError("Failed to upload image(s). Please try again.")
+        const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+        console.error("[v0] Upload error:", errorMessage)
+        setUploadError(`Failed to upload image(s): ${errorMessage}`)
       } finally {
         setUploading(false)
+        // Reset input after upload (success or failure)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""
+          console.log("[v0] Input cleared")
+        }
       }
-
-      // Reset input
-      e.currentTarget.value = ""
     },
     [images, maxImages, onImagesChange]
   )
@@ -101,6 +163,7 @@ export function CloudinaryImageUploader({
       {canAddMore && (
         <div className="relative">
           <input
+            ref={fileInputRef}
             type="file"
             multiple
             accept="image/*"
@@ -131,8 +194,12 @@ export function CloudinaryImageUploader({
 
       {/* Error message */}
       {uploadError && (
-        <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
-          {uploadError}
+        <div className="text-sm text-destructive bg-destructive/10 p-3 rounded flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium">Upload failed</p>
+            <p className="text-xs mt-1">{uploadError}</p>
+          </div>
         </div>
       )}
 
