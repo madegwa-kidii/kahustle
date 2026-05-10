@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { CloudinaryImageUploader } from "@/components/cloudinary-image-uploader"
 
 interface CreateJobFormProps {
     open: boolean
@@ -51,6 +52,7 @@ export const CreateJobForm = memo(function CreateJobForm({
         benefits: [] as string[],
         benefitInput: "",
         deadline: "",
+        images: [] as string[],
     })
 
     const handleInputChange = (field: string, value: any) => {
@@ -94,6 +96,7 @@ export const CreateJobForm = memo(function CreateJobForm({
             benefits: [],
             benefitInput: "",
             deadline: "",
+            images: [],
         })
     }
 
@@ -118,7 +121,7 @@ export const CreateJobForm = memo(function CreateJobForm({
             qualifications: formData.qualifications,
             benefits: formData.benefits,
             deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined,
-            images: [],
+            images: formData.images,
         })
 
         resetForm()
@@ -338,6 +341,14 @@ export const CreateJobForm = memo(function CreateJobForm({
                 inputField="benefitInput"
                 placeholder="Add benefit..."
             />
+
+            <div>
+                <CloudinaryImageUploader
+                    maxImages={3}
+                    disabled={isLoading}
+                    onImagesChange={(images) => handleInputChange("images", images)}
+                />
+            </div>
         </div>
     )
 

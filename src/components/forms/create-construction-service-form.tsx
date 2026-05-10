@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { CloudinaryImageUploader } from "@/components/cloudinary-image-uploader"
 
 interface CreateConstructionServiceFormProps {
     open: boolean
@@ -48,6 +49,7 @@ export const CreateConstructionServiceForm = memo(function CreateConstructionSer
         certifications: [] as string[],
         certificationInput: "",
         previousProjects: "",
+        images: [] as string[],
     })
 
     const handleInputChange = (field: string, value: any) => {
@@ -88,6 +90,7 @@ export const CreateConstructionServiceForm = memo(function CreateConstructionSer
             certifications: [],
             certificationInput: "",
             previousProjects: "",
+            images: [],
         })
     }
 
@@ -109,7 +112,7 @@ export const CreateConstructionServiceForm = memo(function CreateConstructionSer
             priceType: formData.priceType,
             certifications: formData.certifications,
             previousProjects: formData.previousProjects ? parseInt(formData.previousProjects) : undefined,
-            images: [],
+            images: formData.images,
         })
 
         resetForm()
@@ -313,6 +316,14 @@ export const CreateConstructionServiceForm = memo(function CreateConstructionSer
                 inputField="certificationInput"
                 placeholder="e.g., NCA Certified"
             />
+
+            <div>
+                <CloudinaryImageUploader
+                    maxImages={3}
+                    disabled={isLoading}
+                    onImagesChange={(images) => handleInputChange("images", images)}
+                />
+            </div>
         </div>
     )
 
