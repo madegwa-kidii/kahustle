@@ -1,12 +1,7 @@
 // models/Category.ts
 import { Schema, model, models, Types, Document } from "mongoose";
+import { MainCategory } from "@/lib/categories"
 
-export enum MainCategory {
-	VEHICLES = "vehicles",
-	CONSTRUCTION_FREELANCERS = "construction-freelancers",
-	CAREERS = "careers",
-	PROPERTIES = "properties",
-}
 
 export interface ISubcategory {
 	label: string
