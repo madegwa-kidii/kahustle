@@ -36,7 +36,7 @@ export const CreateConstructionServiceForm = memo(function CreateConstructionSer
         name: "",
         description: "",
         price: "",
-        serviceType: "",
+        category: "",
         expertise: [] as string[],
         expertiseInput: "",
         yearsOfExperience: "",
@@ -77,7 +77,7 @@ export const CreateConstructionServiceForm = memo(function CreateConstructionSer
             name: "",
             description: "",
             price: "",
-            serviceType: "",
+            category: "",
             expertise: [],
             expertiseInput: "",
             yearsOfExperience: "",
@@ -95,14 +95,14 @@ export const CreateConstructionServiceForm = memo(function CreateConstructionSer
     }
 
     const handleSubmit = async () => {
-        const requiredFields = ["name", "price", "serviceType", "yearsOfExperience", "availability", "priceType"]
+        const requiredFields = ["name", "price", "category", "yearsOfExperience", "availability", "priceType"]
         if (requiredFields.some((f) => !formData[f as keyof typeof formData])) return
 
         await onSubmit({
             name: formData.name,
             description: formData.description,
             price: parseFloat(formData.price),
-            serviceType: formData.serviceType,
+            category: formData.category,
             expertise: formData.expertise,
             yearsOfExperience: parseInt(formData.yearsOfExperience),
             license: formData.license || undefined,
@@ -120,7 +120,7 @@ export const CreateConstructionServiceForm = memo(function CreateConstructionSer
     }
 
     const isFormValid =
-        formData.name && formData.price && formData.serviceType &&
+        formData.name && formData.price && formData.category &&
         formData.yearsOfExperience && formData.availability && formData.priceType
 
     const TagList = ({
@@ -192,12 +192,12 @@ export const CreateConstructionServiceForm = memo(function CreateConstructionSer
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <Label htmlFor="cs-type">Service Type *</Label>
+                    <Label htmlFor="cs-category">Category *</Label>
                     <Input
-                        id="cs-type"
-                        placeholder="Roofing"
-                        value={formData.serviceType}
-                        onChange={(e) => handleInputChange("serviceType", e.target.value)}
+                        id="cs-category"
+                        placeholder="Painting"
+                        value={formData.category}
+                        onChange={(e) => handleInputChange("category", e.target.value)}
                         disabled={isLoading}
                     />
                 </div>
