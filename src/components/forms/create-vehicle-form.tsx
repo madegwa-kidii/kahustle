@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { CloudinaryImageUploader } from "@/components/cloudinary-image-uploader"
 
 interface CreateVehicleFormProps {
     open: boolean
@@ -45,6 +46,7 @@ export const CreateVehicleForm = memo(function CreateVehicleForm({
         color: "",
         condition: "",
         vin: "",
+        images: [] as string[],
     })
 
     const handleInputChange = (field: string, value: any) => {
@@ -66,6 +68,7 @@ export const CreateVehicleForm = memo(function CreateVehicleForm({
             color: "",
             condition: "",
             vin: "",
+            images: [],
         })
     }
 
@@ -78,7 +81,6 @@ export const CreateVehicleForm = memo(function CreateVehicleForm({
             price: parseFloat(formData.price),
             year: parseInt(formData.year),
             mileage: parseFloat(formData.mileage),
-            images: [],
         })
 
         resetForm()
@@ -250,6 +252,14 @@ export const CreateVehicleForm = memo(function CreateVehicleForm({
                     value={formData.vin}
                     onChange={(e) => handleInputChange("vin", e.target.value)}
                     disabled={isLoading}
+                />
+            </div>
+
+            <div>
+                <CloudinaryImageUploader
+                    maxImages={3}
+                    disabled={isLoading}
+                    onImagesChange={(images) => handleInputChange("images", images)}
                 />
             </div>
         </div>

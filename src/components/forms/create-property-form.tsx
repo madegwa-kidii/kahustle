@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { CloudinaryImageUploader } from "@/components/cloudinary-image-uploader"
 
 interface CreatePropertyFormProps {
     open: boolean
@@ -48,6 +49,7 @@ export const CreatePropertyForm = memo(function CreatePropertyForm({
         yearBuilt: "",
         parking: "street",
         condition: "",
+        images: [] as string[],
     })
 
     const handleInputChange = (field: string, value: any) => {
@@ -89,6 +91,7 @@ export const CreatePropertyForm = memo(function CreatePropertyForm({
             yearBuilt: "",
             parking: "street",
             condition: "",
+            images: [],
         })
     }
 
@@ -112,7 +115,7 @@ export const CreatePropertyForm = memo(function CreatePropertyForm({
             yearBuilt: formData.yearBuilt ? parseInt(formData.yearBuilt) : undefined,
             parking: formData.parking,
             condition: formData.condition,
-            images: [],
+            images: formData.images,
         })
 
         resetForm()
@@ -327,6 +330,14 @@ export const CreatePropertyForm = memo(function CreatePropertyForm({
                         ))}
                     </div>
                 )}
+            </div>
+
+            <div>
+                <CloudinaryImageUploader
+                    maxImages={3}
+                    disabled={isLoading}
+                    onImagesChange={(images) => handleInputChange("images", images)}
+                />
             </div>
         </div>
     )
