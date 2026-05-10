@@ -9,10 +9,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
 import Link from "next/link"
 import type { IProduct } from "@/models/Product"
 import { Role } from "@/lib/roles"
+import { CreateVehicleForm } from "@/components/forms/create-vehicle-form"
+import { CreatePropertyForm } from "@/components/forms/create-property-form"
+import { CreateJobForm } from "@/components/forms/create-job-form"
+import { CreateConstructionServiceForm } from "@/components/forms/create-construction-service-form"
 
 interface Product extends Omit<IProduct, "_id" | "userId"> {
     _id: string
@@ -25,6 +30,7 @@ export default function AccountListingsTab() {
     const [isLoading, setIsLoading] = useState(true)
     const [isCreating, setIsCreating] = useState(false)
     const [openDialog, setOpenDialog] = useState(false)
+    const [selectedCategoryType, setSelectedCategoryType] = useState<"vehicle" | "property" | "job" | "construction" | "product">("product")
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
@@ -102,6 +108,7 @@ export default function AccountListingsTab() {
                 category: "",
                 images: [],
             })
+            setSelectedCategoryType("product")
         }
         setOpenDialog(true)
         setError(null)
@@ -261,6 +268,114 @@ export default function AccountListingsTab() {
         }
     }
 
+    const handleVehicleSubmit = async (data: any) => {
+        setIsCreating(true)
+        setError(null)
+        try {
+            const response = await fetch("/api/vehicles", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+            const result = await response.json()
+            if (!response.ok) {
+                setError(result.error || "Failed to create vehicle")
+                return
+            }
+            setSuccess("Vehicle listing created successfully!")
+            setTimeout(() => {
+                setOpenDialog(false)
+                setSuccess(null)
+            }, 1500)
+        } catch (err) {
+            console.error("Error creating vehicle:", err)
+            setError("Failed to create vehicle")
+        } finally {
+            setIsCreating(false)
+        }
+    }
+
+    const handlePropertySubmit = async (data: any) => {
+        setIsCreating(true)
+        setError(null)
+        try {
+            const response = await fetch("/api/properties", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+            const result = await response.json()
+            if (!response.ok) {
+                setError(result.error || "Failed to create property")
+                return
+            }
+            setSuccess("Property listing created successfully!")
+            setTimeout(() => {
+                setOpenDialog(false)
+                setSuccess(null)
+            }, 1500)
+        } catch (err) {
+            console.error("Error creating property:", err)
+            setError("Failed to create property")
+        } finally {
+            setIsCreating(false)
+        }
+    }
+
+    const handleJobSubmit = async (data: any) => {
+        setIsCreating(true)
+        setError(null)
+        try {
+            const response = await fetch("/api/jobs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+            const result = await response.json()
+            if (!response.ok) {
+                setError(result.error || "Failed to create job posting")
+                return
+            }
+            setSuccess("Job listing created successfully!")
+            setTimeout(() => {
+                setOpenDialog(false)
+                setSuccess(null)
+            }, 1500)
+        } catch (err) {
+            console.error("Error creating job:", err)
+            setError("Failed to create job posting")
+        } finally {
+            setIsCreating(false)
+        }
+    }
+
+    const handleConstructionServiceSubmit = async (data: any) => {
+        setIsCreating(true)
+        setError(null)
+        try {
+            const response = await fetch("/api/construction-services", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+            const result = await response.json()
+            if (!response.ok) {
+                setError(result.error || "Failed to create service")
+                return
+            }
+            setSuccess("Service listing created successfully!")
+            setTimeout(() => {
+                setOpenDialog(false)
+                setSuccess(null)
+            }, 1500)
+        } catch (err) {
+            console.error("Error creating service:", err)
+            setError("Failed to create service")
+        } finally {
+            setIsCreating(false)
+        }
+    }
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -400,11 +515,92 @@ export default function AccountListingsTab() {
                 )}
             </Card>
 
-            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+            {/* Category Selection Dialog */}
+            <Dialog open={openDialog && editingProduct === null} onOpenChange={(open) => {
+                if (!open) setOpenDialog(false)
+            }}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Create New Listing</DialogTitle>
+                        <DialogDescription>
+                            Choose what type of listing you want to create
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3 py-6">
+                        <div>
+                            <Label htmlFor="category-type">Listing Type *</Label>
+                            <Select value={selectedCategoryType} onValueChange={(value: any) => setSelectedCategoryType(value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select listing type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="product">General Product</SelectItem>
+                                    <SelectItem value="vehicle">Vehicle</SelectItem>
+                                    <SelectItem value="property">Property</SelectItem>
+                                    <SelectItem value="job">Job Posting</SelectItem>
+                                    <SelectItem value="construction">Construction Service</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={handleCloseDialog}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setOpenDialog(true)
+                            }}
+                        >
+                            Continue
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Vehicle Form */}
+            <CreateVehicleForm
+                open={openDialog && selectedCategoryType === "vehicle"}
+                onOpenChange={setOpenDialog}
+                onSubmit={handleVehicleSubmit}
+                isLoading={isCreating}
+            />
+
+            {/* Property Form */}
+            <CreatePropertyForm
+                open={openDialog && selectedCategoryType === "property"}
+                onOpenChange={setOpenDialog}
+                onSubmit={handlePropertySubmit}
+                isLoading={isCreating}
+            />
+
+            {/* Job Form */}
+            <CreateJobForm
+                open={openDialog && selectedCategoryType === "job"}
+                onOpenChange={setOpenDialog}
+                onSubmit={handleJobSubmit}
+                isLoading={isCreating}
+            />
+
+            {/* Construction Service Form */}
+            <CreateConstructionServiceForm
+                open={openDialog && selectedCategoryType === "construction"}
+                onOpenChange={setOpenDialog}
+                onSubmit={handleConstructionServiceSubmit}
+                isLoading={isCreating}
+            />
+
+            {/* Regular Product Form - kept for legacy support */}
+            <Dialog open={openDialog && selectedCategoryType === "product"} onOpenChange={setOpenDialog}>
                 <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
-                            {editingProduct ? "Edit Listing" : "Create New Listing"}
+                            {editingProduct ? "Edit Listing" : "Create New Product Listing"}
                         </DialogTitle>
                         <DialogDescription>
                             {editingProduct
